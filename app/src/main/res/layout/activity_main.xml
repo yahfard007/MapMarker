@@ -9,20 +9,34 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         class="com.google.android.gms.maps.SupportMapFragment"/>
-
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
     <Button
         android:id="@+id/addMarker"
-       android:layout_gravity="top|left"
+        android:layout_gravity="top"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Add Marker" />
 
     <Button
         android:id="@+id/clearMarker"
-        android:layout_gravity="top|right"
+        android:layout_gravity="top"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Clear"/>
+</LinearLayout>
+
+
+
+
+
+    <Button
+        android:id="@+id/stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:text="Stop"/>
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/image"
@@ -30,7 +44,6 @@
         android:layout_gravity="center"
         android:layout_width="72dp"
         android:layout_height="72dp" />
-
 
 </FrameLayout>
 

@@ -1,5 +1,8 @@
 package com.example.administrator.mapsearch;
 
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +11,12 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.graphics.Color;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationAvailability;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -20,14 +29,17 @@ import com.google.android.gms.maps.model.PolygonOptions;
 import java.util.ArrayList;
 import java.util.Stack;
 
+import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
     GoogleMap googleMap;
     ImageView imageView;
 
-    ArrayList<LatLng> positionList = new ArrayList<>();
-    Stack<Marker> markers = new Stack<>();
-    private Polygon polygon;
+    Stack<PolygonData> polygonDataStack = new Stack<>();
+    //Stack<Marker> markers = new Stack<>();
+    //private Polygon polygon;
+    private GoogleApiClient googleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,20 +50,31 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+
+        createNewPolygonData();
+
         Button addMarkerButton = (Button) findViewById(R.id.addMarker);
         addMarkerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addMarker();
+                addMarker(polygonDataStack.peek());
                 createPolygon();
+
             }
         });
+
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+        googleApiClient.connect();
 
         imageView = (ImageView) findViewById(R.id.image);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addMarker();
+                addMarker(polygonDataStack.peek());
                 createPolygon();
             }
         });
@@ -60,47 +83,119 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         clearMarker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-              if (!markers.isEmpty()){
-
-                  markers.peek().remove();
-                  markers.pop();
-                  positionList.remove(positionList.size() - 1);
-              }
-                if (!positionList.isEmpty())
-                createPolygon();
+                Stack<Marker> markers = polygonDataStack.peek().markers;
+                if (!markers.isEmpty()) {
+                    markers.peek().remove();
+                    markers.pop();
+                    createPolygon();
+                }
             }
         });
 
+        Button stopButton = (Button) findViewById(R.id.stop);
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                createNewPolygonData();
+            }
+        });
 
     }
 
-    private void addMarker() {
+    private void createNewPolygonData() {
+        PolygonData polygonData = new PolygonData();
+        polygonDataStack.push(polygonData);
+    }
+
+    private void addMarker(PolygonData polygonData) {
         Marker marker = googleMap.addMarker(new MarkerOptions().position(
                 googleMap.getCameraPosition().target));
-        markers.push(marker);
-        positionList.add(googleMap.getCameraPosition().target);
-
+        polygonData.markers.push(marker);
         MediaPlayer mpEffect
-                = MediaPlayer.create(MainActivity.this, R.raw.sound);
+                = MediaPlayer.create(MainActivity.this, R.raw.thumpsoundeffect);
         mpEffect.start();
     }
 
 
     public void createPolygon() {
         PolygonOptions rectGon = new PolygonOptions();
-        rectGon.addAll(positionList)
-                .strokeColor(Color.RED)
-                .fillColor(Color.YELLOW)
-                .strokeWidth(3);
-        if (polygon != null)
-            polygon.remove();
-        polygon = googleMap.addPolygon(rectGon);
+        Stack<Marker> markers = polygonDataStack.peek().markers;
+        for (Marker eachMarker : markers) {
+            rectGon.add(eachMarker.getPosition())
+                    .strokeColor(Color.RED)
+                    .fillColor(Color.YELLOW)
+                    .strokeWidth(3);
+        }
+
+        if (polygonDataStack.peek().polygon != null)
+            polygonDataStack.peek().polygon.remove();
+        if (!markers.isEmpty())
+            polygonDataStack.peek().polygon = googleMap.addPolygon(rectGon);
     }
+
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         this.googleMap = googleMap;
 
+        googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+
         googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.getUiSettings().isMyLocationButtonEnabled();
+        googleMap.setMyLocationEnabled(true);
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        LocationAvailability locationAvailability = LocationServices.FusedLocationApi
+                .getLocationAvailability(googleApiClient);
+        if (locationAvailability.isLocationAvailable()) {
+            LocationRequest locationRequest = new LocationRequest()
+                    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                    .setInterval(5000);
+            LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
+        } else {
+            // Do something when location provider not available
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        googleApiClient.connect();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (googleApiClient != null && googleApiClient.isConnected()) {
+            googleApiClient.disconnect();
+        }
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 15));
+    }
+
+    public class PolygonData{
+        Stack<Marker> markers;
+        private Polygon polygon;
+        public PolygonData() {
+            markers = new Stack<>();
+        }
     }
 }
