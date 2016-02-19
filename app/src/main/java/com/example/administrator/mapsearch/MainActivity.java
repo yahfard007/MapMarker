@@ -6,6 +6,7 @@ import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -37,8 +38,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     ImageView imageView;
 
     Stack<PolygonData> polygonDataStack = new Stack<>();
-    //Stack<Marker> markers = new Stack<>();
-    //private Polygon polygon;
     private GoogleApiClient googleApiClient;
 
     @Override
@@ -58,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
                 addMarker(polygonDataStack.peek());
-                createPolygon();
+                createPolygon(polygonDataStack.peek());
 
             }
         });
@@ -75,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
                 addMarker(polygonDataStack.peek());
-                createPolygon();
+                createPolygon(polygonDataStack.peek());
             }
         });
 
@@ -87,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (!markers.isEmpty()) {
                     markers.peek().remove();
                     markers.pop();
-                    createPolygon();
+                    createPolygon(polygonDataStack.peek());
                 }
             }
         });
@@ -96,9 +95,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-
-                createNewPolygonData();
+                if (!polygonDataStack.peek().isEmpty())
+                    createNewPolygonData();
+                else
+                    Log.d("polygondata empty?", "yes");
             }
         });
 
@@ -119,20 +119,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    public void createPolygon() {
+    public void createPolygon(PolygonData polygonData) {
         PolygonOptions rectGon = new PolygonOptions();
-        Stack<Marker> markers = polygonDataStack.peek().markers;
+        Stack<Marker> markers = polygonData.markers;
         for (Marker eachMarker : markers) {
-            rectGon.add(eachMarker.getPosition())
-                    .strokeColor(Color.RED)
-                    .fillColor(Color.YELLOW)
-                    .strokeWidth(3);
+            rectGon.add(eachMarker.getPosition());
         }
+        rectGon.strokeColor(Color.RED);
+        rectGon.fillColor(Color.YELLOW);
+        rectGon.strokeWidth(3);
 
-        if (polygonDataStack.peek().polygon != null)
-            polygonDataStack.peek().polygon.remove();
+        if (polygonData.polygon != null)
+            polygonData.polygon.remove();
         if (!markers.isEmpty())
-            polygonDataStack.peek().polygon = googleMap.addPolygon(rectGon);
+            polygonData.polygon = googleMap.addPolygon(rectGon);
     }
 
 
@@ -191,11 +191,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 15));
     }
 
-    public class PolygonData{
+    public class PolygonData {
         Stack<Marker> markers;
         private Polygon polygon;
+
         public PolygonData() {
             markers = new Stack<>();
+        }
+
+        public boolean isEmpty() {
+            return markers.isEmpty() && polygon == null;
         }
     }
 }
