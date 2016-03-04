@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         createNewPolygonData();
 
-        Button addMarkerButton = (Button) findViewById(R.id.addMarker);
+        final Button addMarkerButton = (Button) findViewById(R.id.addMarker);
         addMarkerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -88,6 +88,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     markers.pop();
                     createPolygon(polygonDataStack.peek());
                 }
+                if (polygonDataStack.size()>1&&markers.isEmpty()){
+                   polygonDataStack.pop();
+                }
             }
         });
 
@@ -99,6 +102,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     createNewPolygonData();
                 else
                     Log.d("polygondata empty?", "yes");
+            }
+        });
+
+        Button AddHole = (Button) findViewById(R.id.addHole);
+        AddHole.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
             }
         });
 
@@ -133,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             polygonData.polygon.remove();
         if (!markers.isEmpty())
             polygonData.polygon = googleMap.addPolygon(rectGon);
+
     }
 
 
@@ -163,7 +176,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onConnectionSuspended(int i) {
-
     }
 
     @Override
@@ -187,8 +199,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onLocationChanged(Location location) {
-        LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 15));
+       /* LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 15));*/
     }
 
     public class PolygonData {
@@ -203,4 +215,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return markers.isEmpty() && polygon == null;
         }
     }
+
 }
+
