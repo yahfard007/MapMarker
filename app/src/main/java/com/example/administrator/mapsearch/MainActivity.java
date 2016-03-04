@@ -85,8 +85,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         clearMarker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                Stack<Marker> holeMarker = polygonDataStack.peek().holeMarker;
+                if (!holeMarker.isEmpty()){
+                    holeMarker.peek().remove();
+                    holeMarker.pop();
+                    createPolygon(polygonDataStack.peek());
+                }
+
                 Stack<Marker> markers = polygonDataStack.peek().markers;
-                if (!markers.isEmpty()) {
+                if (holeMarker.isEmpty() && !markers.isEmpty()) {
                     markers.peek().remove();
                     markers.pop();
                     createPolygon(polygonDataStack.peek());
@@ -148,17 +156,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             for (Marker eachMarker : holeMarker) {
                 holes.push(eachMarker.getPosition());
             }
-
-            if (holes.size()>=3){
-
+            if (holes.size()>=3)
                 rectGon.addHole(holes);
-            }else{
-                PolylineOptions rectLine = new PolylineOptions();
-                rectLine.color(Color.RED);
-                rectLine.width(3);
-                rectLine.addAll(holes);
-                googleMap.addPolyline(rectLine);
-            }
         }
 
         rectGon.strokeColor(Color.RED);
