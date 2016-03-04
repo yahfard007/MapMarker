@@ -26,6 +26,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.Stack;
@@ -56,8 +57,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         addMarkerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addMarker(polygonDataStack.peek());
-                createPolygon(polygonDataStack.peek());
+                PolygonData polygonData = polygonDataStack.peek();
+                addMarker(polygonData.markers);
+                createPolygon(polygonData);
 
             }
         });
@@ -73,8 +75,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addMarker(polygonDataStack.peek());
-                createPolygon(polygonDataStack.peek());
+                PolygonData polygonData = polygonDataStack.peek();
+                addMarker(polygonData.markers);
+                createPolygon(polygonData);
             }
         });
 
@@ -109,8 +112,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         AddHole.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-
+                PolygonData polygonData = polygonDataStack.peek();
+                addMarker(polygonData.holeMarker);
+                createPolygon(polygonData);
             }
         });
 
@@ -121,10 +125,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         polygonDataStack.push(polygonData);
     }
 
-    private void addMarker(PolygonData polygonData) {
+    private void addMarker(Stack<Marker> markers) {
         Marker marker = googleMap.addMarker(new MarkerOptions().position(
                 googleMap.getCameraPosition().target));
-        polygonData.markers.push(marker);
+        markers.push(marker);
         MediaPlayer mpEffect
                 = MediaPlayer.create(MainActivity.this, R.raw.thumpsoundeffect);
         mpEffect.start();
@@ -137,6 +141,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (Marker eachMarker : markers) {
             rectGon.add(eachMarker.getPosition());
         }
+
+        Stack<Marker> holeMarker = polygonData.holeMarker;
+        if(!holeMarker.isEmpty()){
+            Stack<LatLng> holes = new Stack<>();
+            for (Marker eachMarker : holeMarker) {
+                holes.push(eachMarker.getPosition());
+            }
+
+            if (holes.size()>=3){
+
+                rectGon.addHole(holes);
+            }else{
+                PolylineOptions rectLine = new PolylineOptions();
+                rectLine.color(Color.RED);
+                rectLine.width(3);
+                rectLine.addAll(holes);
+                googleMap.addPolyline(rectLine);
+            }
+        }
+
         rectGon.strokeColor(Color.RED);
         rectGon.fillColor(Color.YELLOW);
         rectGon.strokeWidth(3);
@@ -205,10 +229,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public class PolygonData {
         Stack<Marker> markers;
+        Stack<Marker> holeMarker;
         private Polygon polygon;
 
         public PolygonData() {
             markers = new Stack<>();
+            holeMarker = new Stack<>();
         }
 
         public boolean isEmpty() {
