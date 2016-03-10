@@ -21,6 +21,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -109,6 +110,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //ImageView image = (ImageView) findViewById(R.drawable.a53p);
+                imageView = (ImageView) findViewById(R.id.image);
+
                 if (!polygonDataStack.peek().isEmpty())
                     createNewPolygonData();
                 else
@@ -120,9 +124,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         AddHole.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PolygonData polygonData = polygonDataStack.peek();
+                ImageView image = (ImageView) findViewById(R.id.image);
+                image.setImageResource(R.drawable.a53p);
+                image.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        PolygonData polygonData = polygonDataStack.peek();
+                        addMarker(polygonData.holeMarker);
+                        createPolygon(polygonData);
+                    }
+                });
+
+               /* PolygonData polygonData = polygonDataStack.peek();
                 addMarker(polygonData.holeMarker);
-                createPolygon(polygonData);
+                createPolygon(polygonData);*/
             }
         });
 
